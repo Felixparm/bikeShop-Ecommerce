@@ -21,6 +21,41 @@ router.get('/', function(req, res, next) {
   res.render('index', {dataBike:dataBike});
 });
 
+
+
+// Set your secret key. Remember to switch to your live secret key in production!
+// See your keys here: https://dashboard.stripe.com/account/apikeys
+const stripe = require('stripe')('sk_test_51HfOzSHbjNP6FZt80m0kQkyc5WyS36FwUl93p9lR6Pth5PMZMOzRLSuAKum0ut1l6nEsCGR7GCy1OpuQzKD5qRjP00X3BNLj4Y');
+
+router.post('/create-checkout-session', async (req, res) => {
+  req.session.elementsStripe=[];
+  for(var i=0; i<req.session.dataCardBike.length; i++)
+
+  {
+    req.session.elementsStripe.push({
+      price_data: {
+        currency: 'eur',
+        product_data: {
+          name: req.session.dataCardBike[i].name,
+        },
+        unit_amount: req.session.dataCardBike[i].price*100,
+      },
+      quantity: req.session.dataCardBike[i].quantity,
+    })
+  };
+  
+  
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    line_items: req.session.elementsStripe,
+    mode: 'payment',
+    success_url: 'http://localhost:3000/sucess'  , 
+    cancel_url: 'http://localhost:3000',
+  });
+
+  res.json({ id: session.id });
+});
+
 router.get('/shop', function(req, res, next) {
 
   var alreadyExist = false;
@@ -63,3 +98,8 @@ router.post('/update-shop', function(req, res, next){
 })
 
 module.exports = router;
+
+router.get('/sucess', function(req, res, next) {
+
+  res.render('sucess');
+});
